@@ -1,0 +1,3 @@
+is_global = true
+build_property.RootNamespace = UnoWinUIQuickStart.Skia.Wpf.Host
+build_property.ProjectDir = C:\s\nv.github\uno-2\src\AddIns\vscode\templates\Uno.ProjectTemplates.Dotnet\obj\Debug\netstandard2.0\unoapp-winui\UnoWinUIQuickStart.Skia.WPF.Host\

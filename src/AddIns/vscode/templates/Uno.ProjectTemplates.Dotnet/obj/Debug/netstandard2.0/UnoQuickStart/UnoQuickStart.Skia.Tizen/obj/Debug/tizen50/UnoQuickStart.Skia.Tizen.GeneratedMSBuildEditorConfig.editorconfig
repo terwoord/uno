@@ -1,0 +1,3 @@
+is_global = true
+build_property.RootNamespace = UnoQuickStart.Skia.Tizen
+build_property.ProjectDir = C:\s\nv.github\uno-2\src\AddIns\vscode\templates\Uno.ProjectTemplates.Dotnet\obj\Debug\netstandard2.0\UnoQuickStart\UnoQuickStart.Skia.Tizen\
