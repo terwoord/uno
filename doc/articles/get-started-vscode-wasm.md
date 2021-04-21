@@ -1,11 +1,11 @@
 # Setting up your development environment WebAssembly and VS Code
 
-This guide will walk you through the set-up process for building WebAssembly apps with Uno, under Windows, Linux or macOS.
+This guide will walk you through the set-up process for building WebAssembly apps with Uno under Windows, Linux, or macOS. You can either create Uno Platform projects directly from the dotnet CLI or by using the Uno Platform VS Code extension.
 
 ## Prerequisites
 * [**Visual Studio Code**](https://code.visualstudio.com/)
 
-## Create an Uno Platform project
+## Create an Uno Platform project (CLI method)
 
 1. Launch Code, then in the terminal type the following to install the Uno Platform templates:
 ```bash
@@ -18,12 +18,61 @@ dotnet new unoapp -o MyApp -ios=false -android=false -macos=false -uwp=false --v
 
 This will create a solution that only contains the WebAssembly platform support.
 
+## Using the VS Code Uno Platform Extension
+
+You can also create Uno Platform projects using the VS Code Uno Platform extension. This extension contains the following features:
+   - Skia GTK/WASM Project Templates
+   - Automatic `xaml.cs` code-behind file creation upon `.xaml` file creation
+   - UWP XAML Autocomplete
+   - XAML Previewer
+   - XAML Hot Reload
+
+> NOTE: For Skia GTK Template support, the GTK Runtime is required. [Windows/WSL Setup](https://platform.uno/docs/articles/get-started-with-linux.html#setting-for-windows-and-wsl), [Linux Setup](https://platform.uno/docs/articles/get-started-with-linux.html#setting-up-for-linux)
+
+### Installation
+1. In Visual Studio Code install the [Uno Platform extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
+
+### Features
+#### Skia GTK/WASM Project Templates
+
+1. Click on the Uno Platform logo in the activity bar
+2. Select the type of project you would like to build (Skia GTK, WASM, or both)
+3. Provide the solution name and select a folder for the project
+4. Wait for the initial build to finish in order to allow for XAML Autocomplete
+
+![uno-vscode-templates](Assets/vscode-getting-started/uno-vscode-templates.jpg)
+
+#### Automatic code-behind file creation
+
+Adding a new `.xaml` file will automatically create the respective `.xaml.cs` code-behind file next to the `.xaml` file.
+
+#### UWP XAML Autocomplete
+
+With a `.xaml` file open, you can edit the file or use the `CTRL+Space` shortcut to get code completion for the following language features:
+
+1. Controls
+2. Properties within Controls
+3. Events within Controls
+4. Properties with Enum values
+
+> NOTE: This extension is in early development and currently only supports the UWP XAML API, not WinUI.
+
+#### XAML Preview
+
+With a `.xaml` file open and selected, the `Preview Uno Platform XAML` button will be displayed. Clicking on the button will open the `XAML Preview` panel that will display a render of the current XAML view.
+
+![uno-vscode-xaml-preview-button](Assets/vscode-getting-started/uno-vscode-xaml-preview-button.jpg)
+
+#### XAML Hot Reload
+
+Start the debug process by pressing `F5` and edit the currently displayed `.xaml` file to see hot reload in action
+
 ## Prepare the WebAssembly application for debugging
 
 1. Install the [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) and the [JavaScript Debugger (Nightly)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.js-debug-nightly) extension with the debug.javascript.usePreview setting set to true (**File** / **Preference** / **Settings**, search for `Use preview`).
 1. Open Code using
     ```bash
-    code ./MyApp`
+    code ./MyApp
     ```
 1. Visual Studio will ask to restore the nuget packages
 
