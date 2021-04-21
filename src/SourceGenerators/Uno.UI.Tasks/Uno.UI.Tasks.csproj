@@ -1,0 +1,79 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<AssemblyName>Uno.UI.SourceGenerators</AssemblyName>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<RootNamespace>Uno.UI.Tasks</RootNamespace>
+		<AssemblyName>Uno.UI.Tasks.v0</AssemblyName>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+		<PackageReference Include="Uno.Core" />
+		<PackageReference Include="Microsoft.Build">
+			<Version>15.4.8</Version>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Build.Framework">
+			<Version>15.4.8</Version>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Build.Tasks.Core">
+			<Version>15.4.8</Version>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Build.Utilities.Core">
+			<Version>15.4.8</Version>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="..\..\Uno.UWP\ApplicationModel\Resources\Core\AndroidResourceConverter.cs">
+			<Link>Resources\AndroidResourceConverter.cs</Link>
+		</Compile>
+		<Compile Include="..\..\Uno.UWP\ApplicationModel\Resources\Core\iOSResourceConverter.cs">
+			<Link>Resources\iOSResourceConverter.cs</Link>
+		</Compile>
+		<Compile Include="..\..\Uno.UWP\ApplicationModel\Resources\Core\ResourceCandidate.cs">
+			<Link>Resources\ResourceCandidate.cs</Link>
+		</Compile>
+		<Compile Include="..\..\Uno.UWP\ApplicationModel\Resources\Core\ResourceQualifier.cs">
+			<Link>Resources\ResourceQualifier.cs</Link>
+		</Compile>
+		<Compile Include="..\..\Uno.UWP\Helpers\AndroidResourceNameEncoder.cs">
+			<Link>Resources\AndroidResourceNameEncoder.cs</Link>
+		</Compile>
+	</ItemGroup>
+	
+	<Target Name="_copyUnoTasksBuildTime" AfterTargets="Build">
+		<ItemGroup>
+			<_unoTasksFiles Include="$(OutputPath)\*.*" />
+		</ItemGroup>
+		<!--
+		Copy the files to an alternal location, using deterministic build.
+		Don't fail the build if the file is locked
+		-->
+		<Copy SkipUnchangedFiles="true" SourceFiles="@(_unoTasksFiles)" DestinationFolder="$(OutputPath)\..\$(Configuration)_Shadow" Retries="1" RetryDelayMilliseconds="500" ContinueOnError="true" />
+	</Target>
+	<Import Project="..\..\Common.targets" />
+
+	<Target Name="_UnoToolkitOverrideNuget" AfterTargets="AfterBuild" DependsOnTargets="BuiltProjectOutputGroup" Condition="'$(UnoNugetOverrideVersion)'!=''">
+		<PropertyGroup>
+			<_OverrideTargetFramework>$(TargetFramework)</_OverrideTargetFramework>
+			<_baseNugetPath Condition="'$(USERPROFILE)'!=''">$(USERPROFILE)</_baseNugetPath>
+      <_baseNugetPath Condition="'$(HOME)'!=''">$(HOME)</_baseNugetPath>
+			<_TargetNugetFolder>$(_baseNugetPath)\.nuget\packages\Uno.UI\$(UnoNugetOverrideVersion)\build\Uno.UI.Tasks</_TargetNugetFolder>
+		</PropertyGroup>
+		<ItemGroup>
+			<_OutputFiles Include="$(TargetDir)**" />
+		</ItemGroup>
+		<MakeDir Directories="$(_TargetNugetFolder)" />
+		<Message Importance="high" Text="OVERRIDING NUGET PACKAGE CACHE: $(_TargetNugetFolder)" />
+		<Copy SourceFiles="@(_OutputFiles)" DestinationFiles="@(_OutputFiles->'$(_TargetNugetFolder)\%(RecursiveDir)%(Filename)%(Extension)')" />
+		<Copy SourceFiles="@(_OutputFilesPDB)" DestinationFiles="@(_OutputFilesPDB->'$(_TargetNugetFolder)\%(RecursiveDir)%(Filename).pdb')" />
+	</Target>
+</Project>

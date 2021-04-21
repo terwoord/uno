@@ -1,0 +1,6 @@
+#pragma warning disable 108 // new keyword hiding
+#pragma warning disable 114 // new keyword hiding
+namespace Windows.Foundation.Collections
+{
+	// Skipping already declared delegate Windows.Foundation.Collections.MapChangedEventHandler<K, V>
+}
