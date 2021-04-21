@@ -1,0 +1,62 @@
+parameters:
+  vmImage: ''
+
+jobs:
+- job: vscode-addin
+  timeoutInMinutes: 90
+  dependsOn: VS_Latest
+
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+
+  variables:
+    # This is required to be able to use hard links as much as possible
+    NUGET_PACKAGES: $(Agent.WorkFolder)\.nuget
+
+  steps:
+  - checkout: self
+    clean: true
+
+  - template: templates/gitversion.yml
+
+  # Required for the Wasm uitests project
+  - task: NodeTool@0
+
+  - powershell: |
+        cd src\AddIns\vscode
+        npm install -g yo generator-code typescript vsce
+        npm install
+        vsce package -o $(build.artifactstagingdirectory)\vslatest
+
+    condition: and(succeeded(), eq(variables['UNO_UWP_BUILD'], 'false'))
+    displayName: Build VSCode extension
+
+  - task: PowerShell@2
+    displayName: Authenticode Sign Packages
+    inputs:
+      filePath: build/Sign-Package.ps1
+    env:
+      SignClientUser: $(SignClientUser)
+      SignClientSecret: $(SignClientSecret)
+      SignPackageName: "Uno Platform"
+      SignPackageDescription: "The Uno Platform"
+      ArtifactDirectory: $(build.artifactstagingdirectory)\vslatest
+    condition: and(succeeded(), not(eq(variables['build.reason'], 'PullRequest')), not(eq(variables['SignClientSecret'], '')), not(eq(variables['SignClientUser'], '')))
+
+  - task: PublishBuildArtifacts@1
+    # https://developercommunity.visualstudio.com/content/problem/284991/public-vsts-previouw-cant-set-build-number-of-pr-b.html
+    condition: always()
+    inputs:
+      PathtoPublish: $(build.artifactstagingdirectory)
+      ArtifactName: NugetPackages
+      ArtifactType: Container
+
+  # Publish PR packages to local feed to enable canary testing from PR artifacts
+  - task: NuGetCommand@2
+    condition: and(eq(variables['System.PullRequest.IsFork'], 'False'), eq(variables['Build.Reason'], 'PullRequest'))
+    inputs:
+      command: 'push'
+      packagesToPush: '$(build.artifactstagingdirectory)/vslatest/**/*.nupkg'
+      nuGetFeedType: 'internal'
+      publishVstsFeed: '1dd81cbd-cb35-41de-a570-b0df3571a196/a70dae92-4e3d-4540-bf93-9b22ec98d19d'
+      allowPackageConflicts: true

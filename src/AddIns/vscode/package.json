@@ -1,5 +1,5 @@
 {
-    "name": "uno-platform",
+    "name": "uno-platform-vscode",
     "icon": "media/uno-logo-alpha.png",
     "displayName": "Uno Platform",
     "preview": true,

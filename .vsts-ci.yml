@@ -37,7 +37,11 @@ jobs:
   parameters:
     vmImage: '$(windowsVMImage)'
 
-- template: build/ci/.azure-devops-unit-tests.yml
+- template: build/ci/.azure-devops-uap.yml
+  parameters:
+    vmImage: '$(windowsVMImage)'
+
+- template: build/ci/.azure-devops-vscode-extension.yml
   parameters:
     vmImage: '$(windowsVMImage)'
 
