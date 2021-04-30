@@ -30,7 +30,7 @@
 
 	  <!-- net6.0-ios -->
 	  <group targetFramework="net6.0-ios">
-		<dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+		<dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
 		<dependency id="Uno.Core" version="2.3.0" />
 		<dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -38,7 +38,7 @@
 
 	  <!-- net6.0-maccatalyst -->
 	  <group targetFramework="net6.0-maccatalyst">
-		<dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+		<dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
 		<dependency id="Uno.Core" version="2.3.0" />
 		<dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -51,7 +51,7 @@
 		<dependency id="Xamarin.AndroidX.RecyclerView" version="1.1.0" />
 		<dependency id="Xamarin.AndroidX.Fragment" version="1.1.0" />
 		<dependency id="Xamarin.AndroidX.Activity" version="1.1.0" />
-		<dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+		<dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
 		<dependency id="Uno.Core" version="2.3.0" />
 		<dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -63,7 +63,7 @@
 		<dependency id="Xamarin.AndroidX.AppCompat" version="1.1.0" />
 		<dependency id="Xamarin.AndroidX.RecyclerView" version="1.1.0" />
 		<dependency id="Xamarin.AndroidX.Activity" version="1.1.0" />
-		<dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+		<dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
 		<dependency id="Uno.Core" version="2.3.0" />
 		<dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -71,7 +71,7 @@
 
 	  <!-- iOS -->
 	  <group targetFramework="xamarinios10">
-		<dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+		<dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
 		<dependency id="Uno.Core" version="2.3.0" />
 		<dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -79,7 +79,7 @@
 
       <!-- macOS -->
       <group targetFramework="xamarinmac20">
-        <dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+        <dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
         <dependency id="Uno.Core" version="2.3.0" />
         <dependency id="Uno.Core.Build" version="2.3.0" />
 		<dependency id="Uno.Diagnostics.Eventing" version="1.0.4" />
@@ -87,7 +87,7 @@
 
       <!-- .NET Standard 2.0 -->
       <group targetFramework="netstandard2.0">
-        <dependency id="Uno.SourceGenerationTasks" version="3.0.0" />
+        <dependency id="Uno.SourceGenerationTasks" version="3.1.0-dev.4" />
         <dependency id="Uno.Core" version="2.3.0" />
         <dependency id="Uno.Core.Build" version="2.3.0" />
         <dependency id="System.Numerics.Vectors" version="4.5.0" />
