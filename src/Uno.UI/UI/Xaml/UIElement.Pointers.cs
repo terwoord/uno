@@ -957,11 +957,7 @@ namespace Windows.UI.Xaml
 			}
 			catch (Exception e)
 			{
-				if (this.Log().IsEnabled(LogLevel.Error))
-				{
-					this.Log().Error($"Failed to raise '{evt.Name}': {e}");
-				}
-
+				Application.Current.RaiseRecoverableUnhandledException(e);
 				return false;
 			}
 			finally
