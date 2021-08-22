@@ -1123,7 +1123,6 @@ var Uno;
                     const result = this.dispatchEvent(element, eventName, eventPayload);
                     if (result & UI.HtmlEventDispatchResult.StopPropagation) {
                         event.stopPropagation();
-                        event.preventDefault();
                     }
                     if (result & UI.HtmlEventDispatchResult.PreventDefault) {
                         event.preventDefault();
@@ -1440,7 +1439,29 @@ var Uno;
                 return true;
             }
             getBBoxInternal(elementId) {
-                return this.getView(elementId).getBBox();
+                const element = this.getView(elementId);
+                let unconnectedRoot = null;
+                let cleanupUnconnectedRoot = (owner) => {
+                    if (unconnectedRoot !== null) {
+                        owner.removeChild(unconnectedRoot);
+                    }
+                };
+                try {
+                    // On FireFox, the element needs to be connected to the DOM
+                    // or the getBBox() will crash.
+                    if (!element.isConnected) {
+                        while (unconnectedRoot.parentElement) {
+                            // Need to find the top most "unconnected" parent
+                            // of this element
+                            unconnectedRoot = unconnectedRoot.parentElement;
+                        }
+                        this.containerElement.appendChild(unconnectedRoot);
+                    }
+                    return element.getBBox();
+                }
+                finally {
+                    cleanupUnconnectedRoot(this.containerElement);
+                }
             }
             setSvgElementRect(pParams) {
                 const params = WindowManagerSetSvgElementRectParams.unmarshal(pParams);

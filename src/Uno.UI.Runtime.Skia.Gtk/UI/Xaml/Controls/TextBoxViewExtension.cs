@@ -13,6 +13,7 @@ using GtkWindow = Gtk.Window;
 using Object = GLib.Object;
 using Point = Windows.Foundation.Point;
 using Scale = Pango.Scale;
+using System.Diagnostics;
 
 namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 {
@@ -38,7 +39,7 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 		private Fixed GetWindowTextInputLayer()
 		{
 			// now we have the GtkEventBox
-			var overlay = (Overlay)((EventBox) _window.Child).Child;
+			var overlay = (Overlay)((EventBox)_window.Child).Child;
 			return overlay.Children.OfType<Fixed>().First();
 		}
 
@@ -52,8 +53,7 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 			}
 
 			_contentElement = textBox.ContentElement;
-
-			EnsureWidgetForAcceptsReturn(textBox.AcceptsReturn);
+			EnsureWidget(textBox);
 			var textInputLayer = GetWindowTextInputLayer();
 			textInputLayer.Put(_currentInputWidget!, 0, 0);
 
@@ -107,7 +107,7 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 				return;
 			}
 
-			EnsureWidgetForAcceptsReturn(textBox.AcceptsReturn);
+			EnsureWidget(textBox);
 
 			var fontDescription = new FontDescription
 			{
@@ -170,24 +170,37 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 		{
 			entry.IsEditable = !textBox.IsReadOnly;
 			entry.MaxLength = textBox.MaxLength;
-
 		}
 
-		private void EnsureWidgetForAcceptsReturn(bool acceptsReturn)
+		private void EnsureWidget(TextBox textBox)
 		{
+			var isPassword = false;
+			var isPasswordVisible = true;
+			if (textBox is PasswordBox passwordBox)
+			{
+				isPassword = true;
+				isPasswordVisible = passwordBox.PasswordRevealMode == PasswordRevealMode.Visible;
+			}
+
+			// On UWP, A PasswordBox doesn't have AcceptsReturn property.
+			// The property exists on Uno because PasswordBox incorrectly inherits TextBox.
+			// If we have PasswordBox, ignore AcceptsReturnValue and always use Gtk.Entry
+			var acceptsReturn = textBox.AcceptsReturn && !isPassword;
+
 			var isIncompatibleInputType =
 				(acceptsReturn && !(_currentInputWidget is TextView)) ||
 				(!acceptsReturn && !(_currentInputWidget is Entry));
 			if (isIncompatibleInputType)
 			{
 				var inputText = GetInputText();
-				_currentInputWidget = CreateInputWidget(acceptsReturn);
+				_currentInputWidget = CreateInputWidget(acceptsReturn, isPassword, isPasswordVisible);
 				SetWidgetText(inputText ?? string.Empty);
 			}
 		}
 
-		private Widget CreateInputWidget(bool acceptsReturn)
+		private Widget CreateInputWidget(bool acceptsReturn, bool isPassword, bool isPasswordVisible)
 		{
+			Debug.Assert(!acceptsReturn || !isPassword);
 			Widget widget;
 			if (acceptsReturn)
 			{
@@ -199,6 +212,12 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 			else
 			{
 				var entry = new Entry();
+				if (isPassword)
+				{
+					entry.InputPurpose = InputPurpose.Password;
+					entry.Visibility = isPasswordVisible;
+				}
+
 				entry.Changed += WidgetTextChanged;
 				_textChangedDisposable.Disposable = Disposable.Create(() => entry.Changed -= WidgetTextChanged);
 				widget = entry;
@@ -260,6 +279,14 @@ namespace Uno.UI.Runtime.Skia.GTK.Extensions.UI.Xaml.Controls
 		{
 			UpdateSize();
 			UpdatePosition();
+		}
+
+		public void SetIsPassword(bool isPassword)
+		{
+			if (_currentInputWidget is Entry entry)
+			{
+				entry.Visibility = !isPassword;
+			}
 		}
 	}
 }

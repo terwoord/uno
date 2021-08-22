@@ -15,6 +15,9 @@ using UIKit;
 using CoreGraphics;
 using Uno.Logging;
 using Windows.Foundation;
+using Windows.UI.Input;
+using Uno.UI.Xaml.Input;
+using DraggingEventArgs = UIKit.DraggingEventArgs;
 
 namespace Windows.UI.Xaml.Controls
 {
@@ -54,7 +57,6 @@ namespace Windows.UI.Xaml.Controls
 
 		public NativeScrollContentPresenter()
 		{
-			TouchesManager = new ScrollContentPresenterManipulationManager(this);
 			Scrolled += OnScrolled;
 			ViewForZoomingInScrollView = _ => Content as UIView;
 			DidZoom += OnZoom;
@@ -502,6 +504,48 @@ namespace Windows.UI.Xaml.Controls
 
 		#region Touches
 
+		private UIElement _touchTarget;
+
+		/// <inheritdoc />
+		public override void TouchesBegan(NSSet touches, UIEvent evt)
+		{
+			base.TouchesBegan(touches, evt);
+
+			// We wait for the first touches to get the parent so we don't have to track Loaded/UnLoaded
+			// Like native dispatch on iOS, we do "implicit captures" the target.
+			if (this.GetParent() is UIElement parent)
+			{
+				_touchTarget = parent;
+				_touchTarget.TouchesBegan(touches, evt);
+			}
+		}
+
+		/// <inheritdoc />
+		public override void TouchesMoved(NSSet touches, UIEvent evt)
+		{
+			base.TouchesMoved(touches, evt);
+
+			_touchTarget?.TouchesMoved(touches, evt);
+		}
+
+		/// <inheritdoc />
+		public override void TouchesEnded(NSSet touches, UIEvent evt)
+		{
+			base.TouchesEnded(touches, evt);
+
+			_touchTarget?.TouchesEnded(touches, evt);
+			_touchTarget = null;
+		}
+
+		/// <inheritdoc />
+		public override void TouchesCancelled(NSSet touches, UIEvent evt)
+		{
+			base.TouchesCancelled(touches, evt);
+
+			_touchTarget?.TouchesCancelled(touches, evt);
+			_touchTarget = null;
+		}
+
 		/*
 		 * By default the UIScrollView will delay the touches to the content until it detects
 		 * if the manipulation is a drag. And even there, if it detects that the manipulation
@@ -515,11 +559,12 @@ namespace Windows.UI.Xaml.Controls
 		 * On the UIElement this is defined by the ManipulationMode.
 		 */
 
-		internal UIElement.TouchesManager TouchesManager { get; }
+		private TouchesManager _touchesManager;
+		internal TouchesManager TouchesManager => _touchesManager ??= new NativeScrollContentPresenterManipulationManager(this);
 
 		private void UpdateDelayedTouches()
 		{
-			if (TouchesManager.Listeners == 0)
+			if ((_touchesManager?.Listeners ?? 0) == 0)
 			{
 				// This prevents unnecessary touch delays (which affects the pressed visual states of buttons) when user can't scroll.
 				var canScrollVertically = VerticalScrollBarVisibility != ScrollBarVisibility.Disabled && ContentSize.Height > Frame.Height;
@@ -532,14 +577,20 @@ namespace Windows.UI.Xaml.Controls
 			}
 		}
 
-		private class ScrollContentPresenterManipulationManager : UIElement.TouchesManager
+		private class NativeScrollContentPresenterManipulationManager : TouchesManager
 		{
 			private readonly NativeScrollContentPresenter _scrollPresenter;
 
-			public ScrollContentPresenterManipulationManager(NativeScrollContentPresenter scrollPresenter)
+			public NativeScrollContentPresenterManipulationManager(NativeScrollContentPresenter scrollPresenter)
 			{
 				_scrollPresenter = scrollPresenter;
 			}
+
+			/// <inheritdoc />
+			protected override bool CanConflict(GestureRecognizer.Manipulation manipulation)
+				=> _scrollPresenter.CanHorizontallyScroll && manipulation.IsTranslateXEnabled
+					|| _scrollPresenter.CanVerticallyScroll && manipulation.IsTranslateYEnabled
+					|| manipulation.IsDragManipulation; // This will actually always be false when CanConflict is being invoked in current setup.
 
 			/// <inheritdoc />
 			protected override void SetCanDelay(bool canDelay)
@@ -549,6 +600,6 @@ namespace Windows.UI.Xaml.Controls
 			protected override void SetCanCancel(bool canCancel)
 				=> _scrollPresenter.CanCancelContentTouches = canCancel;
 		}
-	#endregion
+		#endregion
 	}
 }

@@ -37,6 +37,10 @@ $(function () {
     renderTabs();
   }
 
+  $(window).resize(function() {
+    updateLogo();
+  });
+
   $(document).on('wordpressMenuHasLoaded', function() {
     const path = window.location.pathname;
     const docsUrl = '/docs/articles/';
@@ -56,7 +60,18 @@ $(function () {
       $('#search-query').val(decodeURI(searchParam));
     }
 
+    updateLogo();
   });
+
+  function updateLogo(){
+    var curWidth = window.innerWidth;
+    if(curWidth < 980) {
+      $('#logo').attr('src', '../images/UnoLogoSmall.png');
+    }
+    else {
+      $('#logo').attr('src', '../images/uno-logo.png');
+    }
+  }
 
   // Add this event listener when needed
   // window.addEventListener('content-update', contentUpdate);
@@ -263,11 +278,14 @@ $(function () {
 
     function addSearchEvent() {
       $('body').on("searchEvent", function () {
+        $('#search-results>.sr-items').html('<p>No results found</p>');
+
         $('#search-query').keypress(function (e) {
           return e.which !== 13;
         });
 
         $('#search-query').on("keyup", function () {
+          $('#search-results').show();
           query = $(this).val();
           $("body").trigger("query-ready");
           $('#search-results>.search-list').text('Search Results for "' + query + '"');
@@ -322,7 +340,6 @@ $(function () {
             return itemNode;
           })
         );
-        $('#search-results').show();
         query.split(/\s+/).forEach(function (word) {
           if (word !== '') {
             word = word.replace(/\*/g, '');

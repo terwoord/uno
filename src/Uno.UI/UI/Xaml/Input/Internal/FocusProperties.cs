@@ -292,7 +292,7 @@ namespace Uno.UI.Xaml.Input
 		{
 			if (parent is UIElement uiElement)
 			{
-				return uiElement.GetChildrenInTabFocusOrderInternal();
+				return uiElement.GetChildrenInTabFocusOrderInternal() ?? Array.Empty<DependencyObject>();
 			}
 
 			return GetFocusChildren(parent);
@@ -300,7 +300,7 @@ namespace Uno.UI.Xaml.Input
 
 		internal static void IsScrollable(DependencyObject element, ref bool horizontally, ref bool vertically)
 		{
-			if (element is ScrollContentPresenter scrollContentPresenter)
+			if (element is ScrollContentPresenter)
 			{
 				horizontally = false;
 				vertically = false;

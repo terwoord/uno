@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.ApplicationModel.DataTransfer.DragDrop;
 using Windows.ApplicationModel.DataTransfer.DragDrop.Core;
+using Windows.Devices.Haptics;
 using Windows.Devices.Input;
 using Windows.Foundation;
 using Windows.UI.Core;
@@ -107,8 +108,11 @@ namespace Windows.UI.Xaml
 			if (snd is UIElement elt && args.NewValue is bool canDrag)
 			{
 				elt.UpdateDragAndDrop(canDrag);
+				elt.OnCanDragChanged(args.OldValue is bool oldCanDrag && oldCanDrag, canDrag);
 			}
 		}
+
+		partial void OnCanDragChanged(bool oldValue, bool newValue);
 
 		public bool CanDrag
 		{
@@ -217,7 +221,7 @@ namespace Windows.UI.Xaml
 		/// </summary>
 		internal HitTestability GetHitTestVisibility()
 		{
-#if __WASM__ || __SKIA__
+#if __WASM__ || __SKIA__ || __MACOS__
 			return HitTestVisibility;
 #else
 			// This is a coalesced HitTestVisible and should be unified with it
@@ -319,6 +323,10 @@ namespace Windows.UI.Xaml
 		{
 			var recognizer = new GestureRecognizer(this);
 
+			// Allow partial parts to subscribe to pointer events (WASM)
+			// or to subscribe to events for platform specific needs (iOS)
+			OnGestureRecognizerInitialized(recognizer);
+
 			recognizer.ManipulationStarting += OnRecognizerManipulationStarting;
 			recognizer.ManipulationStarted += OnRecognizerManipulationStarted;
 			recognizer.ManipulationUpdated += OnRecognizerManipulationUpdated;
@@ -329,13 +337,43 @@ namespace Windows.UI.Xaml
 			recognizer.Holding += OnRecognizerHolding;
 			recognizer.Dragging += OnRecognizerDragging;
 
-			// Allow partial parts to subscribe to pointer events (WASM)
-			OnGestureRecognizerInitialized(recognizer);
+			if (Uno.WinRTFeatureConfiguration.GestureRecognizer.ShouldProvideHapticFeedback)
+			{
+				recognizer.DragReady += HapticFeedbackWhenReadyToDrag;
+			}
 
 			return recognizer;
 		}
 
 		partial void OnGestureRecognizerInitialized(GestureRecognizer recognizer);
+
+		private async void HapticFeedbackWhenReadyToDrag(GestureRecognizer sender, GestureRecognizer.Manipulation args)
+		{
+			try
+			{
+				if (await VibrationDevice.RequestAccessAsync() != VibrationAccessStatus.Allowed)
+				{
+					return;
+				}
+
+				var vibrationDevice = await VibrationDevice.GetDefaultAsync();
+				if (vibrationDevice is null)
+				{
+					return;
+				}
+
+				var controller = vibrationDevice.SimpleHapticsController;
+				var feedback = controller.SupportedFeedback.FirstOrDefault(f => f.Waveform == KnownSimpleHapticsControllerWaveforms.Press);
+				if (feedback != null)
+				{
+					controller.SendHapticFeedback(feedback);
+				}
+			}
+			catch (Exception error)
+			{
+				this.Log().Error("Haptic feedback for drag failed", error);
+			}
+		}
 		#endregion
 
 		#region Manipulations (recognizer settings / custom bubbling)
@@ -775,27 +813,10 @@ namespace Windows.UI.Xaml
 				{
 					global::Windows.UI.Xaml.Window.Current.DragDrop.ProcessMoved(args);
 				}
-				TryPreventInterceptOnDrag(args, isOver);
 			}
 
 			return handledInManaged;
 		}
-
-		/// <summary>
-		/// If a drag is beginning, ensure that native scroll handlers don't intercept the gesture.
-		/// </summary>
-		private void TryPreventInterceptOnDrag(PointerRoutedEventArgs args, bool isInView)
-		{
-			if (isInView && args.Pointer.PointerDeviceType == PointerDeviceType.Touch && CanDrag)
-			{
-				if (_gestures.IsValueCreated && (_gestures.Value.PendingManipulation?.IsHeldLongEnoughToDrag() ?? false))
-				{
-					TryPreventInterceptOnDragPartial();
-				}
-			}
-		}
-
-		partial void TryPreventInterceptOnDragPartial();
 
 		private bool OnNativePointerMove(PointerRoutedEventArgs args) => OnPointerMove(args);
 
@@ -836,7 +857,6 @@ namespace Windows.UI.Xaml
 
 			handledInManaged |= SetPressed(args, false, muteEvent: ctx.IsLocalOnly || !isOverOrCaptured);
 
-			
 			// Note: We process the UpEvent between Release and Exited as the gestures like "Tap"
 			//		 are fired between those events.
 			if (_gestures.IsValueCreated)
@@ -852,6 +872,7 @@ namespace Windows.UI.Xaml
 				}
 			}
 
+#if !UNO_HAS_MANAGED_POINTERS // Captures release are handled a root level
 			// We release the captures on up but only after the released event and processed the gesture
 			// Note: For a "Tap" with a finger the sequence is Up / Exited / Lost, so we let the Exit raise the capture lost
 			// Note: If '!isOver', that means that 'IsCaptured == true' otherwise 'isOverOrCaptured' would have been false.
@@ -859,6 +880,7 @@ namespace Windows.UI.Xaml
 			{
 				handledInManaged |= SetNotCaptured(args);
 			}
+#endif
 
 			return handledInManaged;
 		}
@@ -877,12 +899,14 @@ namespace Windows.UI.Xaml
 				global::Windows.UI.Xaml.Window.Current.DragDrop.ProcessMoved(args);
 			}
 
+#if !UNO_HAS_MANAGED_POINTERS // Captures release are handled a root level
 			// We release the captures on exit when pointer if not pressed
 			// Note: for a "Tap" with a finger the sequence is Up / Exited / Lost, so the lost cannot be raised on Up
 			if (!IsPressed(args.Pointer))
 			{
 				handledInManaged |= SetNotCaptured(args);
 			}
+#endif
 
 			return handledInManaged;
 		}
@@ -965,9 +989,9 @@ namespace Windows.UI.Xaml
 				_pendingRaisedEvent = (null, null, null);
 			}
 		}
-		#endregion
+#endregion
 
-		#region Pointer over state (Updated by the partial API OnNative***, should not be updated externaly)
+#region Pointer over state (Updated by the partial API OnNative***, should not be updated externaly)
 		/// <summary>
 		/// Indicates if a pointer (no matter the pointer) is currently over the element (i.e. OverState)
 		/// WARNING: This might not be maintained for all controls, cf. remarks.
@@ -1014,9 +1038,9 @@ namespace Windows.UI.Xaml
 				return RaisePointerEvent(PointerExitedEvent, args);
 			}
 		}
-		#endregion
+#endregion
 
-		#region Pointer pressed state (Updated by the partial API OnNative***, should not be updated externaly)
+#region Pointer pressed state (Updated by the partial API OnNative***, should not be updated externaly)
 		private readonly HashSet<uint> _pressedPointers = new HashSet<uint>();
 
 		/// <summary>
@@ -1088,9 +1112,9 @@ namespace Windows.UI.Xaml
 		}
 
 		private void ClearPressed() => _pressedPointers.Clear();
-		#endregion
+#endregion
 
-		#region Pointer capture state (Updated by the partial API OnNative***, should not be updated externaly)
+#region Pointer capture state (Updated by the partial API OnNative***, should not be updated externaly)
 		/*
 		 * About pointer capture
 		 *
@@ -1104,7 +1128,7 @@ namespace Windows.UI.Xaml
 
 		private List<Pointer> _localExplicitCaptures;
 
-		#region Capture public (and internal) API ==> This manages only Explicit captures
+#region Capture public (and internal) API ==> This manages only Explicit captures
 		public static DependencyProperty PointerCapturesProperty { get; } = DependencyProperty.Register(
 			"PointerCaptures",
 			typeof(IReadOnlyList<Pointer>),
@@ -1171,7 +1195,7 @@ namespace Windows.UI.Xaml
 
 			Release(PointerCaptureKind.Explicit);
 		}
-		#endregion
+#endregion
 
 		partial void CapturePointerNative(Pointer pointer);
 		partial void ReleasePointerNative(Pointer pointer);
@@ -1270,9 +1294,9 @@ namespace Windows.UI.Xaml
 			relatedArgs.Handled = false;
 			return RaisePointerEvent(PointerCaptureLostEvent, relatedArgs);
 		}
-		#endregion
+#endregion
 
-		#region Drag state (Updated by the RaiseDrag***, should not be updated externaly)
+#region Drag state (Updated by the RaiseDrag***, should not be updated externaly)
 		private HashSet<long> _draggingOver;
 
 		/// <summary>
@@ -1304,6 +1328,6 @@ namespace Windows.UI.Xaml
 		{
 			_draggingOver?.Clear();
 		}
-		#endregion
+#endregion
 	}
 }

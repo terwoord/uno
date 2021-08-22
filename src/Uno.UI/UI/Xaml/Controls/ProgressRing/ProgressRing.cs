@@ -26,7 +26,7 @@ namespace Windows.UI.Xaml.Controls
 		}
 
 		public static DependencyProperty IsActiveProperty { get; } =
-			DependencyProperty.Register("IsActive", typeof(bool), typeof(ProgressRing), new PropertyMetadata(defaultValue: false, propertyChangedCallback: OnIsActiveChanged));
+			DependencyProperty.Register("IsActive", typeof(bool), typeof(ProgressRing), new FrameworkPropertyMetadata(defaultValue: false, propertyChangedCallback: OnIsActiveChanged));
 
 		private static void OnIsActiveChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
 		{
@@ -43,7 +43,7 @@ namespace Windows.UI.Xaml.Controls
 
 		partial void OnUnloadedPartial();
 
-		partial void OnIsActiveChangedPartial(bool newValue);
+		partial void OnIsActiveChangedPartial(bool isActive);
 
 #if !UNO_REFERENCE_API && !__MACOS__ && !__NETSTD_REFERENCE__
 

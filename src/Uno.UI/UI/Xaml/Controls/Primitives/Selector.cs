@@ -53,6 +53,19 @@ namespace Windows.UI.Xaml.Controls.Primitives
 
 		}
 
+		internal override void OnPropertyChanged2(DependencyPropertyChangedEventArgs args)
+		{
+			base.OnPropertyChanged2(args);
+
+			if (args.Property == SelectedItemProperty)
+			{
+				OnSelectedItemChanged(args.OldValue, args.NewValue, updateItemSelectedState: true);
+			}
+			else if (args.Property == SelectedIndexProperty)
+			{
+				OnSelectedIndexChanged((int)args.OldValue, (int)args.NewValue);
+			}
+		}
 
 		protected override void OnApplyTemplate()
 		{
@@ -65,10 +78,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 			"SelectedItem",
 			typeof(object),
 			typeof(Selector),
-			new FrameworkPropertyMetadata(
-				defaultValue: null,
-				propertyChangedCallback: (s, e) => (s as Selector).OnSelectedItemChanged(e.OldValue, e.NewValue, updateItemSelectedState: true)
-			)
+			new FrameworkPropertyMetadata(defaultValue: null)
 		);
 
 		public object SelectedItem
@@ -223,10 +233,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 
 		// Using a DependencyProperty as the backing store for SelectedIndex.  This enables animation, styling, binding, etc...
 		public static DependencyProperty SelectedIndexProperty { get; } =
-			DependencyProperty.Register("SelectedIndex", typeof(int), typeof(Selector), new FrameworkPropertyMetadata(-1,
-				(s, e) => (s as Selector).OnSelectedIndexChanged((int)e.OldValue, (int)e.NewValue)
-			)
-		);
+			DependencyProperty.Register("SelectedIndex", typeof(int), typeof(Selector), new FrameworkPropertyMetadata(-1));
 
 		internal virtual void OnSelectedIndexChanged(int oldSelectedIndex, int newSelectedIndex)
 		{
@@ -510,6 +517,24 @@ namespace Windows.UI.Xaml.Controls.Primitives
 					if (item is SelectorItem selectorItem && selectorItem.IsSelected)
 					{
 						ChangeSelectedItem(selectorItem, false, true);
+					}
+					// If the item is inserted before the currently selected one, increase the selected index.
+					else if (iVCE.CollectionChange == CollectionChange.ItemInserted && (int)iVCE.Index <= SelectedIndex)
+					{
+						SelectedIndex++;
+					}
+				}
+				else if (iVCE.CollectionChange == CollectionChange.ItemRemoved)
+				{
+					// If the removed item is the currently selected one, Set SelectedIndex to -1
+					if ((int)iVCE.Index == SelectedIndex)
+					{
+						SelectedIndex = -1;
+					}
+					// But if it's before the currently selected one, decrement SelectedIndex
+					else if ((int)iVCE.Index < SelectedIndex)
+					{
+						SelectedIndex--;
 					}
 				}
 			}
