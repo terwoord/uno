@@ -20,9 +20,9 @@ namespace Windows.UI.Core
 	/// Defines a priority-based UI Thread scheduler.
 	/// </summary>
 	/// <remarks>
-	/// This implementation is based on the fact that the native queue will 
+	/// This implementation is based on the fact that the native queue will
 	/// only contain one instance of the callback for the current core dispatcher.
-	/// 
+	///
 	/// This gives the native events, such as touch, the priority over managed-side queued
 	/// events, and will allow a properly prioritized processing of idle events.
 	/// </remarks>
@@ -83,7 +83,9 @@ namespace Windows.UI.Core
 		/// Backs the CompositionTarget.Rendering event for WebAssembly.
 		/// </summary>
 		internal event EventHandler<object>? Rendering;
-		internal int RenderEventThrottle;
+
+		internal event Action<Exception>? UnhandledExceptionOccurred;
+		internal int                     RenderEventThrottle;
 		internal Func<TimeSpan, object>? RenderingEventArgsGenerator { get; set; }
 
 		private readonly DateTimeOffset _startTime;
@@ -317,6 +319,8 @@ namespace Windows.UI.Core
 						{
 							_trace.WriteEvent(TraceProvider.CoreDispatcher_Exception, EventOpcode.Send, new[] { ex.GetType().ToString(), operation.GetDiagnosticsName() });
 						}
+
+						UnhandledExceptionOccurred?.Invoke(ex);
 						operation.SetError(ex);
 						this.Log().Error("Dispatcher unhandled exception", ex);
 					}

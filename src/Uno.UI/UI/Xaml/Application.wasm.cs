@@ -44,6 +44,7 @@ namespace Windows.UI.Xaml
 			Package.SetEntryAssembly(this.GetType().Assembly);
 
 			CoreDispatcher.Main.RunAsync(CoreDispatcherPriority.Normal, Initialize);
+			CoreDispatcher.Main.UnhandledExceptionOccurred += RaiseRecoverableUnhandledException;
 
 			ObserveApplicationVisibility();
 		}
