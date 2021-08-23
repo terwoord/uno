@@ -41,10 +41,10 @@ namespace Windows.UI.Xaml
 			}
 
 			Current = this;
+			CoreDispatcher.UnhandledExceptionOccurred += RaiseRecoverableUnhandledException;
 			Package.SetEntryAssembly(this.GetType().Assembly);
 
 			CoreDispatcher.Main.RunAsync(CoreDispatcherPriority.Normal, Initialize);
-			CoreDispatcher.Main.UnhandledExceptionOccurred += RaiseRecoverableUnhandledException;
 
 			ObserveApplicationVisibility();
 		}

@@ -84,7 +84,7 @@ namespace Windows.UI.Core
 		/// </summary>
 		internal event EventHandler<object>? Rendering;
 
-		internal event Action<Exception>? UnhandledExceptionOccurred;
+		internal static event Action<Exception>? UnhandledExceptionOccurred;
 		internal int                     RenderEventThrottle;
 		internal Func<TimeSpan, object>? RenderingEventArgsGenerator { get; set; }
 

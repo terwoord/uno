@@ -27,6 +27,7 @@ namespace Windows.UI.Xaml
 		public Application()
 		{
 			Current = this;
+			CoreDispatcher.UnhandledExceptionOccurred += RaiseRecoverableUnhandledException;
 			Package.SetEntryAssembly(this.GetType().Assembly);
 
 			if (!_startInvoked)
